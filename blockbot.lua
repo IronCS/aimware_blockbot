@@ -4,7 +4,7 @@ local font_icon = draw.CreateFont("Webdings", 30, 30)
 local cur_scriptname = GetScriptName()
 local cur_version = "1.1"
 local git_version = "https://raw.githubusercontent.com/itisluiz/aimware_blockbot/master/version.txt"
-local git_repository = "https://raw.githubusercontent.com/itisluiz/aimware_blockbot/master/slickesp.lua"
+local git_repository = "https://raw.githubusercontent.com/itisluiz/aimware_blockbot/master/blockbot.lua"
 ------------------
 
 -- UI Elements --
