@@ -80,6 +80,9 @@ local function DrawingCallback()
 
 	LocalPlayer = entities.GetLocalPlayer()
 	
+	if LocalPlayer == nil then
+		return
+	end
 	
 	if (key_blockbot:GetValue() == nil or key_blockbot:GetValue() == 0) or not LocalPlayer:IsAlive() then
 		return
