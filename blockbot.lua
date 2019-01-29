@@ -2,7 +2,7 @@ local font_icon = draw.CreateFont("Webdings", 30, 30)
 
 -- Script --------
 local cur_scriptname = GetScriptName()
-local cur_version = "1.2"
+local cur_version = "1.2.1"
 local git_version = "https://raw.githubusercontent.com/itisluiz/aimware_blockbot/master/version.txt"
 local git_repository = "https://raw.githubusercontent.com/itisluiz/aimware_blockbot/master/blockbot.lua"
 ------------------
@@ -82,6 +82,7 @@ local function DrawingCallback()
 			CrouchBlock = true
 			draw.Color(255, 255, 0, 255)
 		else
+			CrouchBlock = false
 			draw.Color(255, 0, 0, 255)
 		end
 		
