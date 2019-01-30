@@ -2,9 +2,10 @@ local font_icon = draw.CreateFont("Webdings", 30, 30)
 
 -- Script --------
 local cur_scriptname = GetScriptName()
-local cur_version = "1.2.1"
+local cur_version = "1.3"
 local git_version = "https://raw.githubusercontent.com/itisluiz/aimware_blockbot/master/version.txt"
 local git_repository = "https://raw.githubusercontent.com/itisluiz/aimware_blockbot/master/blockbot.lua"
+local app_awusers = "http://shady-aimware-api.cf/awusers"
 ------------------
 
 -- UI Elements --
@@ -20,26 +21,14 @@ local chb_blockbot_retreat = gui.Checkbox(gb_blockbot, "chb_blockbot_retreat", "
 -- Check for updates
 local function git_update()
 	if cur_version ~= http.Get(git_version) then
-		if not gui.GetValue("lua_allow_cfg") then
-			print("[Update] " .. cur_scriptname .. " is outdated. Please enable Lua Allow Config and Lua Editing under Settings")
-			print(http.Get(git_version))
-			print(cur_version)
-		else
-			local this_script = file.Open(cur_scriptname, "w")
-			this_script:Write(http.Get(git_repository))
-			this_script:Close()
-			print("[Update] " .. cur_scriptname .. " has updated itself from version " .. cur_version .. " to " .. http.Get(git_version))
-			print("[Update] Please reload " .. cur_scriptname)
-		end
+		local this_script = file.Open(cur_scriptname, "w")
+		this_script:Write(http.Get(git_repository))
+		this_script:Close()
+		print("[Lua Scripting] " .. cur_scriptname .. " has updated itself from version " .. cur_version .. " to " .. http.Get(git_version))
+		print("[Lua Scripting] Please reload " .. cur_scriptname)
 	else
-		print("[Update] " .. cur_scriptname .. " is up-to-date")
+		print("[Lua Scripting] " .. cur_scriptname .. " is up-to-date")
 	end
-end
-
-if gui.GetValue("lua_allow_http") then
-	git_update()
-else
-	print("[Update] Please enable Lua HTTP to check for updates")
 end
 
 -- Shared Variables
@@ -47,23 +36,36 @@ local Target = nil
 local CrouchBlock = false
 local LocalPlayer = nil
 
+local awusers_check = 0
+local awusers = {}
+
 local function DrawingCallback()
 
 	LocalPlayer = entities.GetLocalPlayer()
 	
-	if LocalPlayer == nil then
+	if not gui.GetValue("lua_allow_http") then
 		return
+	end
+	
+	if LocalPlayer == nil or engine.GetServerIP() == nil then
+		return
+	end
+	
+	if (globals.RealTime() > awusers_check + 15 ) then
+		http.Get(app_awusers .. "?ip=" .. urlencode(engine.GetServerIP()) .. "&index=" .. LocalPlayer:GetIndex(), handleGet)
+		
+		awusers_check = globals.RealTime()
 	end
 	
 	if (key_blockbot:GetValue() == nil or key_blockbot:GetValue() == 0) or not LocalPlayer:IsAlive() then
 		return
 	end
-
+	
 	if input.IsButtonDown(key_blockbot:GetValue()) and Target == nil then
-
+	
 		for Index, Entity in pairs(entities.FindByClass("CCSPlayer")) do
-			if Entity:GetIndex() ~= LocalPlayer:GetIndex() and Entity:IsAlive() then
-				if Target == nil then		
+			if Entity:GetIndex() ~= LocalPlayer:GetIndex() and Entity:IsAlive() and awusers[Index] == nil then
+				if Target == nil then
 					Target = Entity;
 				elseif vector.Distance({LocalPlayer:GetAbsOrigin()}, {Target:GetAbsOrigin()}) > vector.Distance({LocalPlayer:GetAbsOrigin()}, {Entity:GetAbsOrigin()}) then
 					Target = Entity;
@@ -143,5 +145,36 @@ local function CreateMoveCallback(UserCmd)
 	
 end
 
-callbacks.Register("Draw", DrawingCallback)
-callbacks.Register("CreateMove", CreateMoveCallback)
+function handleGet(content)
+	if (content == nil) then
+		return
+    end
+	
+	awusers = {}
+	for stringindex in content:gmatch('[^,%s]+') do
+		awusers[tonumber(stringindex)] = true
+	end
+end
+
+local char_to_hex = function(c)
+    return string.format("%%%02X", string.byte(c))
+end
+
+function urlencode(url) -- Straight up stolen from ShadyRetard, thanks for all the help.
+    if url == nil then
+        return
+    end
+    url = url:gsub("\n", "\r\n")
+    url = url:gsub("([^%w ])", char_to_hex)
+    url = url:gsub(" ", "+")
+    return url
+end
+
+
+if gui.GetValue("lua_allow_http") and gui.GetValue("lua_allow_cfg") then
+	git_update()
+	callbacks.Register("Draw", DrawingCallback)
+	callbacks.Register("CreateMove", CreateMoveCallback)
+else
+	print("[Lua Scripting] Please enable Lua HTTP and Lua script/config editing to check for updates")
+end
