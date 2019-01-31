@@ -2,10 +2,10 @@ local font_icon = draw.CreateFont("Webdings", 30, 30)
 
 -- Script --------
 local cur_scriptname = GetScriptName()
-local cur_version = "1.3"
+local cur_version = "1.3.1"
 local git_version = "https://raw.githubusercontent.com/itisluiz/aimware_blockbot/master/version.txt"
 local git_repository = "https://raw.githubusercontent.com/itisluiz/aimware_blockbot/master/blockbot.lua"
-local app_awusers = "http://shady-aimware-api.cf/awusers"
+local app_awusers = "http://api.shadyretard.io/awusers"
 ------------------
 
 -- UI Elements --
@@ -151,7 +151,7 @@ function handleGet(content)
     end
 	
 	awusers = {}
-	for stringindex in content:gmatch('[^,%s]+') do
+	for stringindex in content:gmatch("([^\t]*)") do
 		awusers[tonumber(stringindex)] = true
 	end
 end
