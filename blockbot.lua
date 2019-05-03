@@ -3,19 +3,17 @@ local font_warning = draw.CreateFont("Verdana", 15, 15)
 
 -- Script --------
 local cur_scriptname = GetScriptName()
-local cur_version = "1.3.2"
+local cur_version = "1.4"
 local git_version = "https://raw.githubusercontent.com/itisluiz/aimware_blockbot/master/version.txt"
 local git_repository = "https://raw.githubusercontent.com/itisluiz/aimware_blockbot/master/blockbot.lua"
-local app_awusers = "http://api.shadyretard.io/awusers"
 ------------------
 
 -- UI Elements --
 local ref_msc_auto_other = gui.Reference("MISC", "AUTOMATION", "Other")
 
-local txt_header = gui.Text( ref_msc_auto_other, "● Block Bot")
-local key_blockbot = gui.Keybox(ref_msc_auto_other, "msc_blockbot", "On Key", 0)
-local cob_blockbot_mode = gui.Combobox(ref_msc_auto_other, "msc_blockbot_mode", "Mode", "Match Speed", "Maximum Speed")
-local chb_blockbot_retreat = gui.Checkbox(ref_msc_auto_other, "chb_blockbot_retreat", " Retreat on BunnyHop", 0)
+local key_blockbot = gui.Keybox(ref_msc_auto_other, "msc_blockbot", "Blockbot On Key", 0)
+local cob_blockbot_mode = gui.Combobox(ref_msc_auto_other, "msc_blockbot_mode", "Blockbot Mode", "Match Speed", "Maximum Speed")
+local chb_blockbot_retreat = gui.Checkbox(ref_msc_auto_other, "chb_blockbot_retreat", "Blockbot Retreat on BunnyHop", 0)
 -----------------
 
 -- Check for updates
@@ -36,15 +34,9 @@ local Target = nil
 local CrouchBlock = false
 local LocalPlayer = nil
 
-local awusers = {}
-
 local function OnFrameMain()
 
 	LocalPlayer = entities.GetLocalPlayer()
-	
-	if not gui.GetValue("lua_allow_http") then
-		return
-	end
 	
 	if LocalPlayer == nil or engine.GetServerIP() == nil then
 		return
@@ -58,24 +50,11 @@ local function OnFrameMain()
 		
 		for Index, Entity in pairs(entities.FindByClass("CCSPlayer")) do
 			if Entity:GetIndex() ~= LocalPlayer:GetIndex() and Entity:IsAlive() then
-				local EntityID = client.GetPlayerInfo(Entity:GetIndex())["SteamID"]
-				local isPleb = true
-				
-				for Index, SteamID in pairs(awusers) do	
-					if SteamID == EntityID then
-						isPleb = false
-						break		
-					end
+				if Target == nil then
+					Target = Entity;
+				elseif vector.Distance({LocalPlayer:GetAbsOrigin()}, {Target:GetAbsOrigin()}) > vector.Distance({LocalPlayer:GetAbsOrigin()}, {Entity:GetAbsOrigin()}) then
+					Target = Entity;
 				end
-				
-				if isPleb then
-					if Target == nil then
-						Target = Entity;
-					elseif vector.Distance({LocalPlayer:GetAbsOrigin()}, {Target:GetAbsOrigin()}) > vector.Distance({LocalPlayer:GetAbsOrigin()}, {Entity:GetAbsOrigin()}) then
-						Target = Entity;
-					end
-				end
-				
 			end
 		end
 		
@@ -151,65 +130,11 @@ local function OnCreateMoveMain(UserCmd)
 	
 end
 
-function handleGet(content)
-	if (content == nil) then
-		return
-    end
-	
-	awusers = {}
-	for stringindex in content:gmatch("([^\t]*)") do
-		table.insert(awusers, stringindex)
-	end
-end
-
-local char_to_hex = function(c)
-    return string.format("%%%02X", string.byte(c))
-end
-
-function urlencode(url) -- Straight up stolen from ShadyRetard, thanks for all the help.
-    if url == nil then
-        return
-    end
-    url = url:gsub("\n", "\r\n")
-    url = url:gsub("([^%w ])", char_to_hex)
-    url = url:gsub(" ", "+")
-    return url
-end
-
--- Had to add this because everyone is retarded
-local function OnFrameWarning()
-	if math.floor(common.Time()) % 2 > 0 then
-		draw.Color(255, 255, 255, 255)
-	else
-		draw.Color(255, 0, 0, 255)
-	end
-	draw.SetFont(font_warning)
-	draw.Text(0, 0, "[Lua Scripting] Please enable Lua HTTP and Lua script/config and reload script")
-end
-
-local function OnEventMain(GameEvent)
-	
-	if client.GetLocalPlayerIndex() == nil then
-		return
-	end
-	
-	local LocalSteamID = client.GetPlayerInfo(client.GetLocalPlayerIndex())["SteamID"]
-	
-	if GameEvent:GetName() == "round_prestart" then
-		http.Get(app_awusers .. "?steamid=" .. urlencode(LocalSteamID), handleGet)
-	end
-
-end
-
 if gui.GetValue("lua_allow_http") and gui.GetValue("lua_allow_cfg") then
 	git_update()
-	
-	callbacks.Register("Draw", OnFrameMain)
-	callbacks.Register("CreateMove", OnCreateMoveMain)
-	callbacks.Register("FireGameEvent", OnEventMain)
-	
-	client.AllowListener("round_prestart")
 else
-	print("[Lua Scripting] Please enable Lua HTTP and Lua script/config and reload script")
-	callbacks.Register("Draw", OnFrameWarning)
+	print("[Lua Scripting] Please enable Lua HTTP and Lua script/config for automatic updates")
 end
+
+callbacks.Register("Draw", OnFrameMain)
+callbacks.Register("CreateMove", OnCreateMoveMain)
